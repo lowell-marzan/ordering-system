@@ -1,12 +1,39 @@
 # Lowell Marzan | CIS 345 | 10:30 - 11:45
 
 import json
+import mysql.connector
+import os
+import pprint
+from dotenv import load_dotenv, find_dotenv
+from pymongo import MongoClient
 from tkinter import *
 from tkinter import ttk
 from PIL import Image, ImageTk
 from order import *
 from product import *
 
+
+def insert_test_doc():
+    collection = order_db.test
+    test_document = {
+        "user": "lmarzan",
+        "type": "test"
+    }
+    inserted_id =  collection.insert_one(test_document).inserted_id
+    print(inserted_id)
+
+def insert_into_db(user, name, create, pickup, items, cost):
+    collection = order_db.orders
+    doc = {
+        "Username": user,
+        "Customer Name": name,
+        "Create Time": create,
+        "Pickup Time": pickup,
+        "Items": items,
+        "Total Price": cost
+    }
+    inserted_id = collection.insert_one(doc).inserted_id
+    print(f"The new document's ID is: {inserted_id}")
 
 def close():
     window.destroy()
@@ -128,6 +155,10 @@ def checkout():
         with open("orders.csv", "a") as file_pointer:
             data = csv.writer(file_pointer)
             data.writerow(order_to_csv)
+
+        # Insert into MongoDB collection
+        insert_into_db(user, accounts[user]["Name"], orders.creation_time, orders.pickup_time, items_list, orders.total)
+
         for food in orders.items:
             cart2.insert(END, str(food))
         orders.clear_order()
@@ -242,6 +273,33 @@ user = ""
 helv18 = ("Helvetica", 18)
 helv16 = ("Helvetica", 16)
 helv12 = ("Helvetica", 12)
+
+# MongoDB connection
+
+load_dotenv(find_dotenv())
+
+db_password = os.environ.get("MONGODB_PWD")
+
+connection_string = f"mongodb+srv://admin:{db_password}@orders.wxqmah1.mongodb.net/?retryWrites=true&w=majority"
+
+client = MongoClient(connection_string)
+order_db = client.orders
+collections = order_db.list_collection_names()
+print(collections)
+
+# db = mysql.connector.connect(
+#     host="localhost",
+#     user="root",
+#     passwd="root"
+# )
+
+# cursor = db.cursor()
+
+# cursor.execute("CREATE TABLE orders ()")
+
+# insert_test_doc()
+
+
 
 window = Tk()
 
